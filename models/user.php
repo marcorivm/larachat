@@ -14,7 +14,8 @@ class User {
 
 	public function getOpenChats()
 	{
-		$chats = Session::get('chats', array('3'));
+		// TODO: Remove hack
+		$chats = Session::get('chats', array('3')); // Testing hack
 		$chats_content = array();
 		foreach ($chats as $chat) {
 			$chats_content[$chat] = $this->messages($chat)->get();
@@ -24,8 +25,8 @@ class User {
 
 	public function unread($participant = 0)
 	{
-		// Status 0 = unread
-		return $this->incoming()->where_to($this->id)->where_status('0');
+		// Status 1 = unread
+		return $this->incoming()->where_to($this->id)->where_status('1');
 	}
 	public function messages($arguments)
 	{
