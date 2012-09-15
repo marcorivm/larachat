@@ -1,4 +1,4 @@
-<? namespace LaraChat;
+<? namespace Larachat;
 
 /**
  * --------------------------------------------------------------------------
@@ -7,7 +7,7 @@
  */
 use Laravel\Session;
 use Laravel\View;
-use LaraChat\Models\User;
+use Larachat\Models\User;
 
 /**
  * --------------------------------------------------------------------------

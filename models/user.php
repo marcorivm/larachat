@@ -1,9 +1,9 @@
 <?php namespace Larachat\Models;
-
+use Larachat\Libraries\Date;
 use Laravel\File;
 use Laravel\Session;
 use Laravel\Database as DB;
-
+use Larachat\Models\Message;
 class User {
 	public $user;
 
@@ -25,6 +25,7 @@ class User {
 
 	public function unread($participant = 0)
 	{
+		// TODO: add participant filter
 		// Status 1 = unread
 		return $this->incoming()->where_to($this->id)->where_status('1');
 	}
@@ -32,24 +33,25 @@ class User {
 	{
 
 		$date = Date::forge('now - 3 hours'); // Default history 3 hours
-		$query = DB::table('messages')->where(function($query) {
-			$query->where_from($this->id);
-			$query->or_where_to($this->id);
+		$own_id = $this->id;
+		$query = DB::table('messages')->where(function($query) use ($own_id){
+			$query->where_from($own_id);
+			$query->or_where('to', '=', $own_id);
 		});
 		if(is_array($arguments)) {
 			// TODO: various arguments
 		} else {
 			// If only one argument, assume it's the participant id
 			$participant = $arguments;
-			$query->where(function ($query) use $participant
+			$query->where(function ($query) use ($participant)
 			{
 				$query->where_from($participant);
-				$query->or_where_to($participant);
+				$query->or_where('to', '=',$participant);
 			});
 		}
-		 $query->where('created_at', '>=', $date);
+		 $query->where('created_at', '>=', $date->format('datetime'));
 		 $query->order_by('created_at', 'asc');
-		return $query;
+		return $query->get();
 	}
 
 	public function incoming()

@@ -38,5 +38,5 @@ Autoloader::directories(array(
 
 // Autoload classes
 Autoloader::namespaces(array(
-    'LaraChat' => __DIR__.DS,
+    'Larachat' => __DIR__.DS,
 ));

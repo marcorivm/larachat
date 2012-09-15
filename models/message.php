@@ -1,5 +1,5 @@
-<?php
+<?php namespace Larachat\Models;
 
-class Larachat_Message extends Eloquent {
+class Message extends Eloquent {
 
 }
