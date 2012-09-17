@@ -7,6 +7,7 @@
         </blockquote>
         <br />
     @endforeach
+    <hr>
 @empty
     {{ Alert::danger('There are no open chats! :(') }}
 @endforelse

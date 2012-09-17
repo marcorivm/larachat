@@ -23,7 +23,7 @@ class User {
 	public function getOpenChats()
 	{
 		// TODO: Remove hack
-		$chats = Session::get('chats', array(1,2)); // Testing hack
+		$chats = Session::get('chats', array(2)); // Testing hack
 		$chats_content = array();
 		foreach ($chats as $chat) {
 			$chats_content[$chat] = $this->messages($chat)->get();
