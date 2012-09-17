@@ -1,4 +1,4 @@
-<? namespace Larachat;
+<? namespace Larachat\Controllers;
 
 /**
  * --------------------------------------------------------------------------
@@ -22,7 +22,7 @@ use Larachat\Models\User;
  * @author   Marco Rivadeneyra <mark@20d.mx>
  * @link     https://github.com/rockiano/Lara-Chat
  */
-class Chat
+class Chat extends \Controller
 {
 	public static function create($user = null)
 	{
