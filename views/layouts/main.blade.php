@@ -9,13 +9,13 @@
     <meta name="author" content="">
 
     <!-- Le styles -->
-    {{ Asset::styles() }}
+    {{ Laravel\Asset::styles() }}
 
     <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
     <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    {{ Asset::scripts() }}
+    {{ Laravel\Asset::scripts() }}
 
 </head>
 
@@ -23,8 +23,16 @@
 <body>
 @yield_section
 
-    <div class="container">
+    <div class="container-fluid">
         @yield('main-content')
+        <div class="row-fluid">
+            <div class="span9">
+                @yield('main-chat')
+            </div>
+            <div class="span3">
+                @yield('right-bar')
+            </div>
+        </div>
     </div>
 
     <footer class="footer">

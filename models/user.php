@@ -15,6 +15,25 @@ class User {
 		$this->user_name = $user_name;
 	}
 
+	public static function getOnlineUsers()
+	{
+		$users = array();
+
+		if (\Cache::has('online_users'))
+		{
+			$online_users = \Cache::get('online_users');
+
+			foreach($online_users as $user)
+			{
+				$temp = \User::find($user[0]);
+				$temp->nick = $user[1];
+				$users[] = $temp;
+			}
+		}
+		
+		return $users;
+	}
+
 	public function getName()
 	{
 		$user_name = $this->user_name;
