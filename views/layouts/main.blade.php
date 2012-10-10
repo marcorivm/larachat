@@ -29,7 +29,7 @@
             <div class="span9">
                 @yield('main-chat')
             </div>
-            <div class="span3">
+            <div class="span3 well">
                 @yield('right-bar')
             </div>
         </div>

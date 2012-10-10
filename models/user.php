@@ -26,8 +26,22 @@ class User {
 			foreach($online_users as $user)
 			{
 				$temp = \User::find($user[0]);
-				$temp->nick = $user[1];
-				$users[] = $temp;
+				$now = Date::forge();
+				$diff = Date::diff($now, $temp->updated_at);			
+
+				// check timestamp for 5 minutes
+				if ($diff->i > 5 ||
+					$diff->y > 0 ||
+					$diff->m > 0 ||
+					$diff->d > 0 ||
+					$diff->h > 0)
+				{
+					\Larachat\Chat::removeNick($temp->id);
+				} else
+				{
+					$temp->nick = $user[1];
+					$users[] = $temp;
+				}
 			}
 		}
 		
@@ -59,7 +73,7 @@ class User {
 	public function messages($arguments)
 	{
 
-		$date = Date::forge('now - 3 days'); // Default history 3 hours
+		$date = Date::forge('now - 3 hours'); // Default history 3 hours
 		$own_id = $this->id;
 		$query = DB::table('messages')->where(function($query) use ($own_id){
 			$query->where_from($own_id);

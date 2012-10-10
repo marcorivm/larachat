@@ -67,6 +67,31 @@ class Chat
 		return null;
 	}
 
+	// Remove a user from cache
+	public static function removeNick($id)
+	{
+		$users = \Cache::get('online_users');
+		$new_users;
+
+		if ($users)
+		{
+			foreach($users as $user)
+			{
+				if ($user[0] != $id)
+					$new_users[] = $user;
+			}
+		}
+
+		return $new_users;
+	}
+
+	public static function updateTimestamp($id)
+	{
+		$user = \User::find($id);
+		$user->timestamp();
+		$user->save();
+	}
+
 	public static function create($user = null)
 	{
 		// CSS
