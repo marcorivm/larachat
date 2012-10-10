@@ -45,6 +45,24 @@ class Larachat_Chat_Controller extends Base_Controller {
 
 		return Larachat\Models\Message::getMessagesFromAfter($from, $id);
 	}
+
+	public function action_getOnlineUsers()
+	{
+		$online_users = Larachat\Models\User::getOnlineUsers();
+		return Response::json($online_users);
+		$online = array();
+
+		foreach($online_users as $user)
+		{
+			$temp = User::find($user->id);
+			$temp->nick = Larachat\Chat::getNick($user->id);
+
+			$online[] = $temp;
+		}
+
+		//return var_dump($online);
+		return \Response::json($online);
+	}
 }
 
 ?>
