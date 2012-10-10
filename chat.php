@@ -14,8 +14,7 @@ use Larachat\Models\User;
  * Lara Cart
  * --------------------------------------------------------------------------
  *
- * A Shopping Cart based on the Cart library from CodeIgniter for use with
- * the Laravel Framework.
+ * A simple chat for use with the Laravel Framework.
  *
  * @package  Lara-Chat
  * @version  1.0
