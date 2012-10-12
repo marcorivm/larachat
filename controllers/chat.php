@@ -12,8 +12,8 @@ class Larachat_Chat_Controller extends Base_Controller {
 		}
 
 		// Store nick in cache
-		Chat::addNick($user->id, $user->name);
-		\Chat::updateTimestamp($user->id);
+		Larachat\Models\User::addNick($user->id, $user->name);
+		Larachat\Models\User::updateTimestamp($user->id);
 		
 
 		$this->view_opts['user'] = $user;
@@ -27,13 +27,13 @@ class Larachat_Chat_Controller extends Base_Controller {
 	{
 		$user = Auth::user();
 		// update timestamps
-		Chat::updateTimestamp($user->id);
+		Larachat\Models\User::updateTimestamp($user->id);
 
 		$message = new Larachat\Models\Message;
 		$message->from = $user->id;
 		$message->to = Input::get('to');
 		$message->message = Input::get('message');
-		$message->nick = Chat::getNick($user->id);
+		$message->nick = Larachat\Models\User::getNick($user->id);
 		$message->save();
 		return true;
 	}
@@ -55,7 +55,7 @@ class Larachat_Chat_Controller extends Base_Controller {
 		foreach($online_users as $user)
 		{
 			$temp = User::find($user->id);
-			$temp->nick = Larachat\Chat::getNick($user->id);
+			$temp->nick = Larachat\Models\User::getNick($user->id);
 
 			$online[] = $temp;
 		}

@@ -15,6 +15,74 @@ class User {
 		$this->user_name = $user_name;
 	}
 
+	// Adds a nick to the cache
+	public static function addNick($id, $nick)
+	{
+		$users = \Cache::get('online_users');
+
+		if ($users)
+		{
+			\Cache::forget('online_users');
+
+			// check if nick is already stored
+			foreach ($users as $user)
+			{
+				if ($user[0] == $id)
+				{
+					$user[1] = $nick;
+					\Cache::forever('online_users', $users);
+					return;
+				}
+			}
+		}		
+
+		$users[] = array($id, $nick);
+		\Cache::forever('online_users', $users);
+		return;
+	}
+
+	// Gets a nick from the cache
+	public static function getNick($id)
+	{
+		$users = \Cache::get('online_users');
+
+		if ($users)
+		{
+			foreach($users as $user)
+			{
+				if ($user[0] == $id)
+					return $user[1];
+			}
+		}
+
+		return null;
+	}
+
+	// Remove a user from cache
+	public static function removeNick($id)
+	{
+		$users = \Cache::get('online_users');
+		$new_users;
+
+		if ($users)
+		{
+			foreach($users as $user)
+			{
+				if ($user[0] != $id)
+					$new_users[] = $user;
+			}
+		}
+
+		return $new_users;
+	}
+
+	public static function updateTimestamp($id)
+	{
+		$user = \User::find($id);
+		$user->timestamp();
+		$user->save();
+	}
+
 	public static function getOnlineUsers()
 	{
 		$users = array();
@@ -36,7 +104,7 @@ class User {
 					$diff->d > 0 ||
 					$diff->h > 0)
 				{
-					\Larachat\Chat::removeNick($temp->id);
+					User::removeNick($temp->id);
 				} else
 				{
 					$temp->nick = $user[1];

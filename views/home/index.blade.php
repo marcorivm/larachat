@@ -3,12 +3,11 @@
 @section('main-chat')
 <div class="row-fluid">
 	<div class="span12 well">
-		<ul class="nav nav-tabs">
-			<li class="active"><a href="">General</a></li>
-			<li><a href="">Otros</a></li>
+		<ul class="nav nav-tabs" id="chats">
+			<li class="active"><a href="#tab-1" id="link-1">General</a></li>			
 		</ul>
-		<div class="tab-content">
-			<div class="tab-pane active">
+		<div class="tab-content" id="tabs">
+			<div class="tab-pane active" id="tab-1">
 				<table id="-1" class="table table-striped table-bordered">
 					@forelse ($global_messages as $message)
 						<tr data-messageid="{{ $message->id }}"><td>{{ $message->nick }}: {{ $message->message }}</td></tr>
@@ -16,7 +15,7 @@
 						No hay mensajes!
 					@endforelse
 				</table>		
-			</div>
+			</div>			
 		</div>
 	</div>
 </div>
@@ -36,7 +35,7 @@
 @endsection
 
 @section('right-bar')
-	<table id="users" class="table table-striped table-bordered">
+	<table id="users" class="table table-striped table-bordered table-hover">
 		@forelse ($online_users as $user)
 			<tr data-userid="{{ $user->id }}"><td>{{ $user->name }}</td></tr>
 		@empty
@@ -47,13 +46,43 @@
 
 @section('footer')
 <script>
-var textarea = $('#texto');
-var users = $('#users');
-var myNick = '{{ $user->nick }}';
+var textarea;
+var users;
+var myNick;
+var myId;
+var tabs;
+var chats;
+var openChats = new Array(1);
+openChats[0] = -1;
 
 function clearText()
 {
 	textarea.val('');
+}
+
+function isOpen(id)
+{
+	return openChats.indexOf(id) != -1;
+}
+
+function createNewTab(id, name)
+{
+	if (id == myId || isOpen(id))
+	{
+		return;
+	}
+
+	var link = $('<li><a href="#tab' + id + '" id="link' + id + '">' + name + '</a></li>');
+	var div = $('<div class="tab-pane" id="tab' + id + '">');
+	var table = $('<table id="' + id + '" class="table table-striped table-bordered"></table>');	
+
+	chats.append(link);
+	div.append(table);
+	tabs.append(div);
+
+	openChats.push(id);
+
+	registerTabs();
 }
 
 function insertNewUser(user)
@@ -82,13 +111,29 @@ function updateUsers()
 			$.each(data, function(key, value) {			
 				insertNewUser(value.attributes);
 			});
+			registerTabOpeners();
 		});
 }
 
 function insertNewMessage(message)
 {
+	var id;
+	if (message.to == -1)
+	{
+		id = -1;
+	} else
+	{
+		if (message.from != myId)
+		{
+			id = message.from;
+		} else
+		{
+			id = message.to;
+		}
+	}
+
 	var newRow = createNewMessageRow(message.nick, message.message, message.id);
-	$('#-1').append(newRow);
+	$('#' + id).append(newRow);
 }
 
 function createNewMessageRow(nick, message, id)
@@ -103,6 +148,11 @@ function updateMessages(from)
 	
 	data['from'] = from;
 	data['id'] = $('#' + from + ' tr').last().data('messageid');
+
+	if (!data['id'])
+		data['id'] = -1; // default get all
+
+	//console.log(data['id']);
 	
 	$.post(
 		url,
@@ -136,8 +186,43 @@ function sendMessage(to, message)
 		});
 }
 
+function registerTabs()
+{
+	$('#chats a').click(function (e) {
+	  e.preventDefault();
+	  $(this).tab('show');
+	})
+}
+
+function registerTabOpeners()
+{
+	$('#users tr').click(function (e) {
+		e.preventDefault();
+		
+		var tr = $(this);
+		// check if tab isn't already open
+		if (!isOpen(tr.data('userid')))
+		{
+			createNewTab(tr.data('userid'), tr.children().html());
+		}
+	});
+}
+
 $(document).ready(function($)
 {
+	// vars
+	textarea = $('#texto');
+	users = $('#users');
+	myNick = '{{ $user->nick }}';
+	myId = {{ $user->id }};
+	tabs = $('#tabs');
+	chats = $('#chats');
+
+	// enable chat tabs
+	registerTabs();
+	// enable user list clicks
+	registerTabOpeners();
+
 	/*
 	$('#send').click(function() {
 		var url = '/chat/message';
@@ -156,14 +241,19 @@ $(document).ready(function($)
 	$('form').submit(function(e) {
 		var form = $(this);
 		var data = form.serializeArray()[0];
+		var to = $('div.active').attr('id').substr(3);
 		// console.log(data);
 		var message = data.value;
-		sendMessage(form.data('to'), message);
+		sendMessage(to, message);
 		e.preventDefault();
 	});
 
 	setInterval(function() {
-		updateMessages(-1);
+		for (i = 0; i < openChats.length; i++)
+		{
+			updateMessages(openChats[i]);
+		}
+
 		updateUsers();
 	}, 2000);
 });
