@@ -10,6 +10,7 @@ class Larachat_Chat_Controller extends Base_Controller {
 		{
 			return 'Invalid User';
 		}
+		$user->nick = $user->name;
 
 		// Store nick in cache
 		Larachat\Models\User::addNick($user->id, $user->name);
@@ -35,7 +36,7 @@ class Larachat_Chat_Controller extends Base_Controller {
 		$message->message = Input::get('message');
 		$message->nick = Larachat\Models\User::getNick($user->id);
 		$message->save();
-		return true;
+		return $message->id;
 	}
 
 	public function action_getNewMessages()
@@ -62,6 +63,36 @@ class Larachat_Chat_Controller extends Base_Controller {
 
 		//return var_dump($online);
 		return \Response::json($online);
+	}
+
+	public function action_getName()
+	{
+		$id = Input::get('id');
+		$user = \User::find($id);
+
+		if (!$user)
+		{
+			return '';
+		}
+
+		return $user->name;
+	}
+
+	public function action_getNotification()
+	{
+		return Response::json(Larachat\Models\User::getUnreadUsers());
+	}
+
+	public function action_markAsRead()
+	{
+		$id = Input::get('id');
+
+		Larachat\Models\Message::markAsRead($id);
+	}
+
+	public function action_lastGeneral()
+	{
+		return Larachat\Models\Message::lastGeneral();
 	}
 }
 

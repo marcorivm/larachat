@@ -4,15 +4,14 @@
 <div class="row-fluid">
 	<div class="span12 well">
 		<ul class="nav nav-tabs" id="chats">
-			<li class="active"><a href="#tab-1" id="link-1">General</a></li>			
+			<li class="active"><a href="#tab-1" id="link-1">General <span id="not-1"></span></a></li>			
 		</ul>
 		<div class="tab-content" id="tabs">
 			<div class="tab-pane active" id="tab-1">
 				<table id="-1" class="table table-striped table-bordered">
 					@forelse ($global_messages as $message)
 						<tr data-messageid="{{ $message->id }}"><td>{{ $message->nick }}: {{ $message->message }}</td></tr>
-					@empty
-						No hay mensajes!
+					@empty						
 					@endforelse
 				</table>		
 			</div>			
@@ -36,8 +35,8 @@
 
 @section('right-bar')
 	<table id="users" class="table table-striped table-bordered table-hover">
-		@forelse ($online_users as $user)
-			<tr data-userid="{{ $user->id }}"><td>{{ $user->name }}</td></tr>
+		@forelse ($online_users as $u)
+			<tr data-userid="{{ $u->id }}"><td>{{ $u->name }}</td></tr>
 		@empty
 			No hay usuarios conectados!
 		@endforelse
@@ -54,15 +53,80 @@ var tabs;
 var chats;
 var openChats = new Array(1);
 openChats[0] = -1;
+var lastGeneral;
 
 function clearText()
 {
 	textarea.val('');
 }
 
+function getUser(id)
+{
+	var name;
+	var data = {};
+	data['id'] = id;
+	$.ajax({
+		url: '/chat/name',
+		data: data,
+		async: false,
+		success: function(data, textStatus, xhr) { name = data }
+	});
+
+	return name;
+}
+
 function isOpen(id)
 {
 	return openChats.indexOf(id) != -1;
+}
+
+function markAsRead (id) {
+	var data = {};
+	var url = '/chat/read';
+	data['id'] = id;
+	
+	$.post(
+		url,
+		data,
+		function(data, textStatus, xhr) { clearNotification(id); }
+		);
+}
+
+function notify(id)
+{
+	// create new tab
+	createNewT(id);
+
+	var span = $('#not' + id);
+	span.empty();
+	span.html('<i class="icon-exclamation-sign"></i>');
+}
+
+function clearNotification(id)
+{
+	var span = $('#not' + id);
+	span.empty();
+}
+
+function getNotifications()
+{
+	var data = {};
+	var url = '/chat/notification';
+	
+	$.post(
+		url,
+		data,
+		function(data, textStatus, xhr) {						
+			$.each(data, function(key, value) {			
+				//console.log(value);
+				notify(value);
+			});
+		});	
+}
+
+function createNewT(id)
+{
+	createNewTab(id, getUser(id));
 }
 
 function createNewTab(id, name)
@@ -72,7 +136,7 @@ function createNewTab(id, name)
 		return;
 	}
 
-	var link = $('<li><a href="#tab' + id + '" id="link' + id + '">' + name + '</a></li>');
+	var link = $('<li><a href="#tab' + id + '" id="link' + id + '">' + name + ' <span id="not' + id + '"></span></a></li>');
 	var div = $('<div class="tab-pane" id="tab' + id + '">');
 	var table = $('<table id="' + id + '" class="table table-striped table-bordered"></table>');	
 
@@ -134,6 +198,8 @@ function insertNewMessage(message)
 
 	var newRow = createNewMessageRow(message.nick, message.message, message.id);
 	$('#' + id).append(newRow);
+
+	return newRow;
 }
 
 function createNewMessageRow(nick, message, id)
@@ -150,9 +216,10 @@ function updateMessages(from)
 	data['id'] = $('#' + from + ' tr').last().data('messageid');
 
 	if (!data['id'])
-		data['id'] = -1; // default get all
+		data['id'] = lastGeneral; // default get all
 
 	//console.log(data['id']);
+	console.log('Updating messages from: ' + data['from'] + ', mid = ' + data['id']);
 	
 	$.post(
 		url,
@@ -176,13 +243,15 @@ function sendMessage(to, message)
 	tempMessage['message'] = message;
 	tempMessage['nick'] = myNick;
 	tempMessage['id'] = $('#' + to + ' tr').last().data('messageid') + 1;
-	insertNewMessage(tempMessage);
+	var tr = insertNewMessage(tempMessage);
 
 	$.post(
 		url,
 		data,
-		function() {		
+		function(data, textStatus, xhr) {
 			clearText();
+			tr.data('messageid', data);
+			console.log(tr);
 		});
 }
 
@@ -191,6 +260,8 @@ function registerTabs()
 	$('#chats a').click(function (e) {
 	  e.preventDefault();
 	  $(this).tab('show');
+	  id = $(this).attr('id').substring(4);
+	  markAsRead(id);
 	})
 }
 
@@ -204,6 +275,7 @@ function registerTabOpeners()
 		if (!isOpen(tr.data('userid')))
 		{
 			createNewTab(tr.data('userid'), tr.children().html());
+			$('#chats a[href="#tab' + tr.data('userid') + '"]').tab('show');
 		}
 	});
 }
@@ -217,6 +289,15 @@ $(document).ready(function($)
 	myId = {{ $user->id }};
 	tabs = $('#tabs');
 	chats = $('#chats');
+
+	$.post(
+		'/chat/lastGeneral',
+		{},
+		function(data, textStatus, xhr) {
+			lastGeneral = data;
+		});
+
+
 
 	// enable chat tabs
 	registerTabs();
@@ -249,12 +330,12 @@ $(document).ready(function($)
 	});
 
 	setInterval(function() {
+		updateUsers();
 		for (i = 0; i < openChats.length; i++)
 		{
 			updateMessages(openChats[i]);
 		}
-
-		updateUsers();
+		getNotifications();
 	}, 2000);
 });
 </script>

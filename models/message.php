@@ -27,16 +27,33 @@ class Message extends \Eloquent {
 											  ->where('id', '>', $id)
 											  ->get();
 		} else
-		{
-			// TODO: messages from specific users
-			$messages = \DB::table('messages')->where('id', '>', $id)
+		{			
+			$messages = \DB::table('messages')->where('id', '>', $id)											  
 											  ->where(function($query) use ($from) {
 											  	$query->where('to', '=', $from);
 											  	$query->or_where('from', '=', $from);
 											  })
 											  ->get();
+			Message::markAsRead($from);
 		}
 
 		return \Response::json($messages);
+	}
+
+	public static function lastGeneral()
+	{
+		$messages = \DB::table('messages')->where('to', '=', '-1')
+										  ->get();
+
+		return end($messages)->id;
+	}
+
+	public static function markAsRead($from)
+	{
+		$myId = \Auth::user()->id;
+
+		$affected = \DB::table('messages')->where('from', '=', $from)
+										 ->where('to', '=', $myId)
+										 ->update(array('status' => true));
 	}
 }

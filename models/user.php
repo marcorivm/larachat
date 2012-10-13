@@ -163,6 +163,27 @@ class User {
 		return $query;
 	}
 
+	public static function getUnreadUsers()
+	{
+		$myId = \Auth::user()->id;
+
+		$messages = DB::table('messages')->where('status', '=', 'false')
+										 ->where(function($query) use ($myId){
+			//$query->where('to', '=', '-1');
+			$query->or_where('to', '=', $myId);
+		})->get();
+
+		$users = array();
+
+		foreach($messages as $message)
+		{
+			$users[] = $message->from;
+			// $users['nick'] = $message->nick;
+		}
+
+		return array_unique($users);
+	}
+
 	public function incoming()
 	{
 		return $this->user->has_many('Larachat\\Models\\Message', 'to');
