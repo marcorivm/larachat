@@ -40,7 +40,6 @@ class Message extends \Eloquent {
 											  ->where('to', '=', $user->id)
 											  ->where('from', '=', $from)
 											  ->get();							  		
-
 			static::markAsRead($from);
 		}
 
