@@ -33,7 +33,8 @@ class Message extends \Eloquent {
 											  	$query->where('to', '=', $from);
 											  	$query->or_where('from', '=', $from);
 											  })
-											  ->get();
+											  ->where('to', '!=', '-1')
+											  ->get();						  
 			Message::markAsRead($from);
 		}
 

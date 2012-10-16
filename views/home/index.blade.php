@@ -60,6 +60,11 @@ function clearText()
 	textarea.val('');
 }
 
+function getActiveChatId()
+{
+	return $('div.active').attr('id').substr(3);
+}
+
 function getUser(id)
 {
 	var name;
@@ -179,29 +184,24 @@ function updateUsers()
 		});
 }
 
+function insertNewMessageFrom(message, userid)
+{
+	var newRow = createNewMessageRow(message.nick, message.message, message.id);
+	$('#' + userid).append(newRow);
+
+	return newRow;
+}
+/*
 function insertNewMessage(message)
 {
-	var id;
-	if (message.to == -1)
-	{
-		id = -1;
-	} else
-	{
-		if (message.from != myId)
-		{
-			id = message.from;
-		} else
-		{
-			id = message.to;
-		}
-	}
-
+	var id = message.id;
+	
 	var newRow = createNewMessageRow(message.nick, message.message, message.id);
 	$('#' + id).append(newRow);
 
 	return newRow;
 }
-
+*/
 function createNewMessageRow(nick, message, id)
 {
 	return $('<tr data-messageid="' + id + '"><td>' + nick + ': ' + message + '</td></tr>');
@@ -216,9 +216,9 @@ function updateMessages(from)
 	data['id'] = $('#' + from + ' tr').last().data('messageid');
 
 	if (!data['id'])
-		data['id'] = lastGeneral; // default get all
+		data['id'] = -1; // default get all
 
-	//console.log(data['id']);
+	// console.log(data['id']);
 	console.log('Updating messages from: ' + data['from'] + ', mid = ' + data['id']);
 	
 	$.post(
@@ -227,7 +227,7 @@ function updateMessages(from)
 		function(data, textStatus, xhr) {
 			// console.log(data);
 			$.each(data, function(key, value) {			
-				insertNewMessage(value);
+				insertNewMessageFrom(value, from);
 			});
 		});
 }
@@ -243,15 +243,15 @@ function sendMessage(to, message)
 	tempMessage['message'] = message;
 	tempMessage['nick'] = myNick;
 	tempMessage['id'] = $('#' + to + ' tr').last().data('messageid') + 1;
-	var tr = insertNewMessage(tempMessage);
+	var tr = insertNewMessageFrom(tempMessage, to);
+	clearText();
 
 	$.post(
 		url,
 		data,
-		function(data, textStatus, xhr) {
-			clearText();
+		function(data, textStatus, xhr) {			
 			tr.data('messageid', data);
-			console.log(tr);
+			// console.log(tr);
 		});
 }
 
@@ -322,7 +322,7 @@ $(document).ready(function($)
 	$('form').submit(function(e) {
 		var form = $(this);
 		var data = form.serializeArray()[0];
-		var to = $('div.active').attr('id').substr(3);
+		var to = getActiveChatId();
 		// console.log(data);
 		var message = data.value;
 		sendMessage(to, message);
@@ -332,11 +332,12 @@ $(document).ready(function($)
 	setInterval(function() {
 		updateUsers();
 		for (i = 0; i < openChats.length; i++)
-		{
+		{			
 			updateMessages(openChats[i]);
 		}
+		markAsRead(getActiveChatId());
 		getNotifications();
-	}, 2000);
+	}, 3500);
 });
 </script>
 @endsection
