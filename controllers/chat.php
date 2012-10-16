@@ -1,11 +1,11 @@
 <?php
 
 class Larachat_Chat_Controller extends Base_Controller {
-	
+
 	public function action_chat()
 	{
 		$user = Auth::user();
-		
+
 		if (!$user)
 		{
 			return 'Invalid User';
@@ -15,7 +15,7 @@ class Larachat_Chat_Controller extends Base_Controller {
 		// Store nick in cache
 		Larachat\Models\User::addNick($user->id, $user->name);
 		Larachat\Models\User::updateTimestamp($user->id);
-		
+
 
 		$this->view_opts['user'] = $user;
 		$this->view_opts['online_users'] = Larachat\Models\User::getOnlineUsers();
@@ -62,7 +62,7 @@ class Larachat_Chat_Controller extends Base_Controller {
 		}
 
 		//return var_dump($online);
-		return \Response::json($online);
+		return Response::json($online);
 	}
 
 	public function action_getName()
