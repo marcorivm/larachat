@@ -1,4 +1,4 @@
-== LaraChat ==
+# LaraChat
 Chat bundle for Laravel
 
 
