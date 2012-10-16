@@ -218,7 +218,7 @@ function updateMessages(from)
 	if (!data['id'])
 		data['id'] = -1; // default get all
 
-	// console.log(data['id']);
+	console.log(data['id']);
 	console.log('Updating messages from: ' + data['from'] + ', mid = ' + data['id']);
 	
 	$.post(
@@ -335,7 +335,7 @@ $(document).ready(function($)
 		{			
 			updateMessages(openChats[i]);
 		}
-		markAsRead(getActiveChatId());
+		// markAsRead(getActiveChatId());
 		getNotifications();
 	}, 3500);
 });

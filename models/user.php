@@ -34,7 +34,7 @@ class User {
 					return;
 				}
 			}
-		}		
+		}
 
 		$users[] = array($id, $nick);
 		\Cache::forever('online_users', $users);
@@ -95,7 +95,7 @@ class User {
 			{
 				$temp = \User::find($user[0]);
 				$now = Date::forge();
-				$diff = Date::diff($now, $temp->updated_at);			
+				$diff = Date::diff($now, $temp->updated_at);
 
 				// check timestamp for 5 minutes
 				if ($diff->i > 5 ||
@@ -104,7 +104,7 @@ class User {
 					$diff->d > 0 ||
 					$diff->h > 0)
 				{
-					User::removeNick($temp->id);
+					static::removeNick($temp->id);
 				} else
 				{
 					$temp->nick = $user[1];
@@ -112,7 +112,7 @@ class User {
 				}
 			}
 		}
-		
+
 		return $users;
 	}
 
