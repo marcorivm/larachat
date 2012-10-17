@@ -15,7 +15,11 @@ class User {
 		$this->user_name = $user_name;
 	}
 
-	// Adds a nick to the cache
+	/**
+	 * Adds a nickname to the cache
+	 * @param int $id   The user ID
+	 * @param string $nick The user's nickname to be stored
+	 */
 	public static function addNick($id, $nick)
 	{
 		$users = \Cache::get('online_users');
@@ -41,9 +45,14 @@ class User {
 		return;
 	}
 
-	// Gets a nick from the cache
+	/**
+	 * Gets a stored nick in the cache
+	 * @param  int $id the User ID
+	 * @return string     The user's nickname stored in cache
+	 */
 	public static function getNick($id)
 	{
+		// Get currently stored in cache nicknames
 		$users = \Cache::get('online_users');
 
 		if ($users)
@@ -58,41 +67,59 @@ class User {
 		return null;
 	}
 
-	// Remove a user from cache
+	/**
+	 * Removes a stored nick from cache
+	 * @param  int $id The user's id to remove
+	 */
 	public static function removeNick($id)
 	{
+		// Create new user array
 		$users = \Cache::get('online_users');
+		\Cache::forget('online_users');
 		$new_users;
 
 		if ($users)
 		{
 			foreach($users as $user)
 			{
+				// Only add to new array if the user is different from
+				// the specified parameter
 				if ($user[0] != $id)
 					$new_users[] = $user;
 			}
 		}
-
-		return $new_users;
+		// Store new array back in cache
+		\Cache::forever('online_users', $new_users);
 	}
 
+	/**
+	 * Updates the timestamps of the specified User id
+	 * @param  int $id The user
+	 */
 	public static function updateTimestamp($id)
 	{
+		// Find the User object and update its timestamp
 		$user = \User::find($id);
 		$user->timestamp();
 		$user->save();
 	}
 
+	/**
+	 * Gets the online users' IDs
+	 * @return User[] An array with the user objects of the logged on users
+	 */
 	public static function getOnlineUsers()
 	{
 		$users = array();
 
 		if (\Cache::has('online_users'))
 		{
+			// Get active users from cache
 			$online_users = \Cache::get('online_users');
 
 			foreach($online_users as $user)
 			{
+				// Get user object
 				$temp = \User::find($user[0]);
 				$now = Date::forge();
 				$diff = Date::diff($now, $temp->updated_at);
@@ -104,6 +131,8 @@ class User {
 					$diff->d > 0 ||
 					$diff->h > 0)
 				{
+					// If user hasn't been active for the last 5 minutes
+					// remove from cache
 					static::removeNick($temp->id);
 				} else
 				{
@@ -163,13 +192,17 @@ class User {
 		return $query;
 	}
 
+	/**
+	 * Gets the users' ids from which the current user has unread messages from
+	 * @return int[] Array with the users' IDs
+	 */
 	public static function getUnreadUsers()
 	{
 		$myId = \Auth::user()->id;
 
+		// Get all unread messages directed to me
 		$messages = DB::table('messages')->where('status', '=', 'false')
-										 ->where(function($query) use ($myId){
-			//$query->where('to', '=', '-1');
+										 ->where(function($query) use ($myId) {			
 			$query->or_where('to', '=', $myId);
 		})->get();
 
