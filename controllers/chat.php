@@ -125,6 +125,67 @@ class Larachat_Chat_Controller extends Base_Controller {
 	{
 		return Larachat\Models\Message::lastGeneral();
 	}
+
+	// lqai/chat/test
+	public function action_generalUpdate()
+	{
+		$myUser = Auth::user();
+		$laraUser = new Larachat\Models\User($myUser, $myUser->name);
+		$generalUpdate;
+		$lastGeneralID = Input::get('generalID');
+
+		// update my timestamps
+		$laraUser->updateTimestamps();
+
+		// return active users
+		$generalUpdate['online_users'] = Larachat\Models\User::getOnline();
+
+		// get messages from general chat
+		$generalUpdate['generalUnread'] = Larachat\Models\Message::where('to', '=', '-1')
+												 ->where('id', '>', $lastGeneralID)
+												 ->get();
+		
+		// get unread messages
+		$generalUpdate['privateUnread'] = $laraUser->getPrivateUnread();
+		
+		return Response::json($generalUpdate);
+	}
+
+	public function action_test()
+	{
+		// Get logged in user
+		$user = Auth::user();
+
+		if (!$user)
+		{
+			return 'Invalid User';
+		}
+		// Currently the nickname is the same as the name
+		$user->nick = $user->name;
+
+		// Store nick in cache
+		Larachat\Models\User::addNick($user->id, $user->name);
+		Larachat\Models\User::updateTimestamp($user->id);
+
+		// Attach objects to view
+		$this->view_opts['user'] = $user;
+		$this->view_opts['online_users'] = Larachat\Models\User::getOnlineUsers();
+		$this->view_opts['global_messages'] = Larachat\Models\Message::getGlobalMessages();
+
+		// Generate view
+		return View::make('larachat::home.index2', $this->view_opts);
+	}
+
+	public function action_markAsReadFromUntilID()
+	{
+		$myUser = Auth::user();
+		$laraUser = new Larachat\Models\User($myUser, $myUser->name);
+
+		$id = Input::get('id');
+		$messageid = Input::get('messageid');
+
+		$laraUser->markAsReadFromUntilID($id, $messageid);
+	}
 }
 
 ?>

@@ -16,6 +16,35 @@ class User {
 	}
 
 	/**
+	 * Adds the current user's nickname to the cache
+	 */
+	public function addNickToCache()
+	{
+		$users = \Cache::get('online_users');
+		$myUser = $this->user;
+
+		if ($users)
+		{
+			\Cache::forget('online_users');
+
+			// check if nick is already stored
+			foreach ($users as $user)
+			{
+				if ($user[0] == $myUser->id)
+				{
+					$user[1] = $this->user_name;
+					\Cache::forever('online_users', $users);
+					return;
+				}
+			}
+		}
+
+		$users[] = array($myUser->id, $this->user_name);
+		\Cache::forever('online_users', $users);
+		return;
+	}
+
+	/**
 	 * Adds a nickname to the cache
 	 * @param int $id   The user ID
 	 * @param string $nick The user's nickname to be stored
@@ -46,6 +75,27 @@ class User {
 	}
 
 	/**
+	 * Gets user's nick from cache
+	 * @return string the user's stored nick in cache
+	 */
+	public function getNickFromCache()
+	{
+		$myUser = $this->user;
+		// Get currently stored in cache nicknames
+		$users = \Cache::get('online_users');
+
+		if ($users)
+		{
+			foreach($users as $user)
+			{
+				if ($user[0] == $myUser->id)
+					return $user[1];
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Gets a stored nick in the cache
 	 * @param  int $id the User ID
 	 * @return string     The user's nickname stored in cache
@@ -67,6 +117,30 @@ class User {
 		return null;
 	}
 
+	/**
+	 * Removes the user's nick from the cache
+	 */
+	public function removeNickFromCache()
+	{
+		$myUser = $this->user;
+		// Create new user array
+		$users = \Cache::get('online_users');
+		\Cache::forget('online_users');
+		$new_users;
+
+		if ($users)
+		{
+			foreach($users as $user)
+			{
+				// Only add to new array if the user is different from
+				// the specified parameter
+				if ($user[0] != $this->id)
+					$new_users[] = $user;
+			}
+		}
+		// Store new array back in cache
+		\Cache::forever('online_users', $new_users);
+	}
 	/**
 	 * Removes a stored nick from cache
 	 * @param  int $id The user's id to remove
@@ -92,6 +166,17 @@ class User {
 		\Cache::forever('online_users', $new_users);
 	}
 
+	/**
+	 * Updates the user's timestamps
+	 */
+	public function updateTimestamps()
+	{
+		$myUser = $this->user;
+		// Find the User object and update its timestamp
+		$user = \User::find($myUser->id);
+		$user->timestamp();
+		$user->save();
+	}
 	/**
 	 * Updates the timestamps of the specified User id
 	 * @param  int $id The user
@@ -136,6 +221,44 @@ class User {
 					static::removeNick($temp->id);
 				} else
 				{
+					$temp->nick = $user[1];
+					$users[] = $temp;
+				}
+			}
+		}
+
+		return $users;
+	}
+
+	public static function getOnline()
+	{
+		$users = array();
+
+		if (\Cache::has('online_users'))
+		{
+			// Get active users from cache
+			$online_users = \Cache::get('online_users');
+
+			foreach($online_users as $user)
+			{
+				// Get user object
+				$temp = \User::find($user[0]);
+				$now = Date::forge();
+				$diff = Date::diff($now, $temp->updated_at);
+
+				// check timestamp for 5 minutes
+				if ($diff->i > 5 ||
+					$diff->y > 0 ||
+					$diff->m > 0 ||
+					$diff->d > 0 ||
+					$diff->h > 0)
+				{
+					// If user hasn't been active for the last 5 minutes
+					// remove from cache
+					// TODO: change this to new non-static function
+					static::removeNick($temp->id);
+				} else
+				{					
 					$temp->nick = $user[1];
 					$users[] = $temp;
 				}
@@ -215,6 +338,34 @@ class User {
 		}
 
 		return array_unique($users);
+	}
+
+	public function getPrivateUnread()
+	{
+		$myUser = $this->user;
+		// $messages = Message::where('status', '=', false)
+		// 					 ->where('to', '!=', '-1')
+		// 					 ->where(function($query) use ($myUser) {
+		// 					 	$query->where('to', '=', $myUser->id);
+		// 					 	$query->or_where('from', '=', $myUser->id);
+		// 					 })
+		// 					 ->get();
+		$messages = Message::where('status', '=', false)
+							 ->where('to', '=', $myUser->id)							 
+							 ->get();
+
+		return $messages;
+	}
+
+	public function markAsReadFromUntilID($from, $messageid)
+	{
+		$myUser = $this->user;
+		$myId = $myUser->id;
+
+		$affected = Message::where('from', '=', $from)
+										 ->where('to', '=', $myId)
+										 ->where('id', '<=', $messageid)
+										 ->update(array('status' => true));
 	}
 
 	public function incoming()

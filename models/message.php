@@ -74,4 +74,5 @@ class Message extends \Eloquent {
 										 ->where('to', '=', $myId)
 										 ->update(array('status' => true));
 	}
+
 }
