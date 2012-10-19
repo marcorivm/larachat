@@ -36,7 +36,7 @@
 @section('right-bar')
 	<table id="users" class="table table-striped table-bordered table-hover">
 		@forelse ($online_users as $u)
-			<tr data-userid="{{ $u->id }}"><td>{{ $u->name }}</td></tr>
+			<tr data-userid="{{ $u->id }}" style="cursor: pointer"><td>{{ $u->name }}</td></tr>
 		@empty
 			No hay usuarios conectados!
 		@endforelse
@@ -62,6 +62,11 @@ function clearText()
 {
 	// clears the value of the input
 	textarea.val('');
+}
+
+function scrollBottom () {
+	tabs = $('#tabs');
+	tabs.scrollTop(tabs.height());
 }
 
 /**
@@ -240,7 +245,7 @@ function insertNewUser(user)
  */
 function createNewUserRow(name, id)
 {
-	return $('<tr data-userid="' + id + '"><td>' + name + '</td></tr>');
+	return $('<tr data-userid="' + id + '" style="cursor: pointer"><td>' + name + '</td></tr>');
 }
 
 /**
@@ -360,6 +365,7 @@ function sendMessage(to, message)
 			tr.data('messageid', data);
 			// console.log(tr);
 		});
+	scrollBottom();
 }
 
 /**
@@ -474,6 +480,7 @@ $(document).ready(function($)
 					lastGeneral = temp.id;
 					insertNewMessageFrom(temp, -1);
 					notify(-1, 'General');
+					scrollBottom();
 				});
 				
 				// insert new private messages				
