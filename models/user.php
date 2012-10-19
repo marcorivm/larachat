@@ -230,6 +230,11 @@ class User {
 		return $users;
 	}
 
+	/**
+	 * Returns online Users, currently returns Eloquent User, in future should
+	 * return Larachat User
+	 * @return User[] Array with online users
+	 */
 	public static function getOnline()
 	{
 		$users = array();
@@ -340,16 +345,13 @@ class User {
 		return array_unique($users);
 	}
 
+	/**
+	 * Gets user's unread private messages
+	 * @return Message[] Array with unread private messages
+	 */
 	public function getPrivateUnread()
 	{
 		$myUser = $this->user;
-		// $messages = Message::where('status', '=', false)
-		// 					 ->where('to', '!=', '-1')
-		// 					 ->where(function($query) use ($myUser) {
-		// 					 	$query->where('to', '=', $myUser->id);
-		// 					 	$query->or_where('from', '=', $myUser->id);
-		// 					 })
-		// 					 ->get();
 		$messages = Message::where('status', '=', false)
 							 ->where('to', '=', $myUser->id)							 
 							 ->get();
@@ -357,6 +359,12 @@ class User {
 		return $messages;
 	}
 
+	/**
+	 * Marks all private messages from a specified user as read, up until 
+	 * the message ID passed as a parameter
+	 * @param  int $from      The other user's ID
+	 * @param  id $messageid The message ID up until which to mark messages as read
+	 */
 	public function markAsReadFromUntilID($from, $messageid)
 	{
 		$myUser = $this->user;

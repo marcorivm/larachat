@@ -462,7 +462,7 @@ $(document).ready(function($)
 		input['generalID'] = lastGeneral;		
 
 		$.post(
-			'/chat/test',
+			'/chat/generalUpdate',
 			input,
 			function(data, textStatus, xhr) {
 			

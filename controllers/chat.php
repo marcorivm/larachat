@@ -160,18 +160,26 @@ class Larachat_Chat_Controller extends Base_Controller {
 		{
 			return 'Invalid User';
 		}
-		// Currently the nickname is the same as the name
-		$user->nick = $user->name;
+		// // Currently the nickname is the same as the name
+		// $user->nick = $user->name;
 
-		// Store nick in cache
-		Larachat\Models\User::addNick($user->id, $user->name);
-		Larachat\Models\User::updateTimestamp($user->id);
+		// // Store nick in cache
+		// Larachat\Models\User::addNick($user->id, $user->name);
+		// Larachat\Models\User::updateTimestamp($user->id);
+		// 
+		$laraUser = new Larachat\Models\User($user, $user->name);
+		$laraUser->addNickToCache();
+		$laraUser->updateTimestamps();
+
+		$user->nick = $user->name;
 
 		// Attach objects to view
 		$this->view_opts['user'] = $user;
 		$this->view_opts['online_users'] = Larachat\Models\User::getOnlineUsers();
 		$this->view_opts['global_messages'] = Larachat\Models\Message::getGlobalMessages();
 
+		//DEBUG
+		// return var_dump($laraUser);
 		// Generate view
 		return View::make('larachat::home.index2', $this->view_opts);
 	}
