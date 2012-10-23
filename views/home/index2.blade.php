@@ -488,7 +488,7 @@ $(document).ready(function($)
 					var temp = value.attributes;
 					var otherID = (myId == temp.from) ? temp.to : temp.from;					
 					var otherName = temp.nick;
-					notify(otherID, otherName)
+					notify(otherID * 1, otherName)
 					insertNewMessageFrom(temp, otherID);
 					//markAsRead(getActiveChatId());	
 					markAsReadFromUntilID(otherID, temp.id);	
