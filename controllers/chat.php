@@ -147,6 +147,9 @@ class Larachat_Chat_Controller extends Base_Controller {
 		
 		// get unread messages
 		$generalUpdate['privateUnread'] = $laraUser->getPrivateUnread();
+
+		// get open messages
+		$generalUpdate['openChats'] = $laraUser->getStoredChatsFromCache();
 		
 		return Response::json($generalUpdate);
 	}
@@ -193,6 +196,26 @@ class Larachat_Chat_Controller extends Base_Controller {
 		$messageid = Input::get('messageid');
 
 		$laraUser->markAsReadFromUntilID($id, $messageid);
+	}
+
+	public function action_storeChat()
+	{
+		$myUser = Auth::user();
+		$laraUser = new Larachat\Models\User($myUser, $myUser->name);
+
+		$laraUser->storeChatToCache(Input::get('userID'));
+
+		return Response::json($laraUser->getStoredChatsFromCache());
+	}
+
+	public function action_removeChat()
+	{
+		$myUser = Auth::user();
+		$laraUser = new Larachat\Models\User($myUser, $myUser->name);
+
+		$laraUser->removeChatFromCache(Input::get('userID'));
+
+		return Response::json($laraUser->getStoredChatsFromCache());
 	}
 }
 

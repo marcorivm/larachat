@@ -66,7 +66,7 @@ function clearText()
 
 function scrollBottom () {
 	tabs = $('#tabs');
-	tabs.scrollTop(tabs.height());
+	tabs.scrollTop(tabs[0].scrollHeight);
 }
 
 /**
@@ -499,6 +499,11 @@ $(document).ready(function($)
 					//markAsRead(getActiveChatId());	
 					markAsReadFromUntilID(otherID, temp.id);	
 					
+				});
+
+				// open previously left open chats
+				$.each(data.openChats, function(key, value) {
+					createNewTab(value[0], value[1]);
 				});
 			});
 			clearNotification(getActiveChatId());	

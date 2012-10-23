@@ -15,6 +15,76 @@ class User {
 		$this->user_name = $user_name;
 	}
 
+	public function getStoredChatsFromCache()
+	{
+		$myUser = $this->user;
+		$cacheName = 'stored_chats_' . $myUser->id;
+		$chats = \Cache::get($cacheName);
+
+		$ret = array();
+
+		foreach($chats as $chat)
+		{
+			$ret[] = array($chat, static::findName($chat));
+		}
+
+		return $ret;
+	}
+
+	public function storeChatToCache($userID)
+	{
+		$myUser = $this->user;
+		$cacheName = 'stored_chats_' . $myUser->id;
+		$chats = \Cache::get($cacheName);
+
+		if ($chats)
+		{
+			\Cache::forget($cacheName);
+
+			// check if user has stored chat before
+			foreach ($chats as $chat)
+			{
+				if ($chat == $userID)
+				{					
+					\Cache::forever($cacheName, $chats);
+					return;
+				}
+			}
+			$chats[] = $userID;
+		} else
+		{
+			$chats = array($userID);
+		}
+
+		\Cache::forever($cacheName, $chats);
+		return;
+	}
+
+	public function removeChatFromCache($userID)
+	{
+		$myUser = $this->user;
+		$cacheName = 'stored_chats_' . $myUser->id;
+		// Create new user array
+		$chats = \Cache::get($cacheName);
+		\Cache::forget($cacheName);
+		$new_chats = array();
+
+		if ($chats)
+		{
+			foreach($chats as $chat)
+			{
+				// Only add to new array if the user is different from
+				// the specified parameter
+				if ($chat != $userID)
+				{
+					$new_chats[] = $chat;
+				}				
+			}
+		}
+		// Store new array back in cache
+		\Cache::forever($cacheName, $new_chats);
+	}
+
 	/**
 	 * Adds the current user's nickname to the cache
 	 */
@@ -150,7 +220,7 @@ class User {
 		// Create new user array
 		$users = \Cache::get('online_users');
 		\Cache::forget('online_users');
-		$new_users;
+		$new_users = array();
 
 		if ($users)
 		{
@@ -395,6 +465,12 @@ class User {
 		} else {
 			return $this->user->$name;
 		}
+	}
+
+	public static function findName($id)
+	{
+		$user = \User::find($id);
+		return $user->name;
 	}
 
 }
