@@ -338,6 +338,12 @@ function updateMessages(from)
  */
 function sendMessage(to, message)
 {
+	// don't send an empty message
+	if (message.length == 0)
+	{
+		return;
+	}
+
 	var url = '/chat/message';
 	var data = {};
 	data['message'] = message;
@@ -488,7 +494,7 @@ $(document).ready(function($)
 					var temp = value.attributes;
 					var otherID = (myId == temp.from) ? temp.to : temp.from;					
 					var otherName = temp.nick;
-					notify(otherID, otherName)
+					notify(otherID * 1, otherName)
 					insertNewMessageFrom(temp, otherID);
 					//markAsRead(getActiveChatId());	
 					markAsReadFromUntilID(otherID, temp.id);	
