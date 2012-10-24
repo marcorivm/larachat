@@ -23,9 +23,12 @@ class User {
 
 		$ret = array();
 
-		foreach($chats as $chat)
+		if ($chats)
 		{
-			$ret[] = array($chat, static::findName($chat));
+			foreach($chats as $chat)
+			{
+				$ret[] = array($chat, static::findName($chat));
+			}
 		}
 
 		return $ret;

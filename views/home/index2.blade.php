@@ -4,7 +4,7 @@
 <div class="row-fluid">
 	<div class="span12 well">
 		<ul class="nav nav-tabs" id="chats">
-			<li class="active"><a href="#tab-1" id="link-1">General <span id="not-1"></span></a></li>			
+			<li class="active"><a href="#tab-1" id="link-1"><span id="not-1"></span> General</span></a></li>			
 		</ul>
 		<div class="tab-content" id="tabs" style="overflow: auto; height: 400px;">
 			<div class="tab-pane active" id="tab-1">
@@ -129,6 +129,32 @@ function markAsRead (id) {
 		});
 }
 
+function storeChat (id) {
+	var data = {};
+	var url = '/chat/storeChatToCache';
+	data['userID'] = id;
+
+	$.post(
+		url,
+		data,
+		function(data, textStatus, xhr) {
+
+		});
+}
+
+function removeChat (id) {
+	var data = {};
+	var url = '/chat/removeChatFromCache';
+	data['userID'] = id;
+
+	$.post(
+		url,
+		data,
+		function(data, textStatus, xhr) {
+
+		});
+}
+
 function markAsReadFromUntilID (id, messageid) {
 	var data = {};
 	var url = '/chat/readFromUntilID';
@@ -214,7 +240,7 @@ function createNewTab(id, name)
 	}
 
 	// create HTML elements needed
-	var link = $('<li><a href="#tab' + id + '" id="link' + id + '">' + name + ' <span id="not' + id + '"></span></a></li>');
+	var link = $('<li><a href="#tab' + id + '" id="link' + id + '"><span id="not' + id + '"></span> '+ name + ' <span id="close' + id + '"><i class="icon-remove"></i></span></a></li>');
 	var div = $('<div class="tab-pane" id="tab' + id + '">');
 	var table = $('<table id="' + id + '" class="table table-striped table-bordered"></table>');	
 	// append them where apprpopiate
@@ -225,6 +251,8 @@ function createNewTab(id, name)
 	openChats.push(id);
 	// registar click handlers
 	registerTabs();
+	// add chat to cache for left open
+	storeChat(id);
 }
 
 /**
@@ -409,6 +437,32 @@ function registerTabOpeners()
 	});
 }
 
+function registerTabClosers()
+{
+	$("i.icon-remove").click(function (e) {
+		e.preventDefault();
+		id = $(this).parent().attr('id').substr(5);
+		removeChat(id);
+		closeTab(id);
+	});
+}
+
+function closeTab(id)
+{
+	// remove link form tabs
+	$("#link" + id).remove();
+	// switch active to general
+	$('#chats a[href="#tab-1"]').tab('show');
+	// remove from active chats
+	for (i = 0; i < openChats.length; i++)
+	{
+		if (openChats[i] == id)
+		{
+			openChats[i] = -1;
+		}
+	}
+}
+
 /**
  * Function to run on page load
  */
@@ -503,8 +557,9 @@ $(document).ready(function($)
 
 				// open previously left open chats
 				$.each(data.openChats, function(key, value) {
-					createNewTab(value[0], value[1]);
+					createNewTab(value[0] * 1, value[1]);
 				});
+				registerTabClosers();
 			});
 			clearNotification(getActiveChatId());	
 	}, 2000);
