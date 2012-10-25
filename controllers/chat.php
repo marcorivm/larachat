@@ -6,30 +6,30 @@ class Larachat_Chat_Controller extends Base_Controller {
 	 * Chat action, gets the logged in user and generates the view
 	 * @return View The chat view
 	 */
-	public function action_chat()
-	{
-		// Get logged in user
-		$user = Auth::user();
+	// public function action_chat()
+	// {
+	// 	// Get logged in user
+	// 	$user = Auth::user();
 
-		if (!$user)
-		{
-			return 'Invalid User';
-		}
-		// Currently the nickname is the same as the name
-		$user->nick = $user->name;
+	// 	if (!$user)
+	// 	{
+	// 		return 'Invalid User';
+	// 	}
+	// 	// Currently the nickname is the same as the name
+	// 	$user->nick = $user->name;
 
-		// Store nick in cache
-		Larachat\Models\User::addNick($user->id, $user->name);
-		Larachat\Models\User::updateTimestamp($user->id);
+	// 	// Store nick in cache
+	// 	Larachat\Models\User::addNick($user->id, $user->name);
+	// 	Larachat\Models\User::updateTimestamp($user->id);
 
-		// Attach objects to view
-		$this->view_opts['user'] = $user;
-		$this->view_opts['online_users'] = Larachat\Models\User::getOnlineUsers();
-		$this->view_opts['global_messages'] = Larachat\Models\Message::getGlobalMessages();
+	// 	// Attach objects to view
+	// 	$this->view_opts['user'] = $user;
+	// 	$this->view_opts['online_users'] = Larachat\Models\User::getOnlineUsers();
+	// 	$this->view_opts['global_messages'] = Larachat\Models\Message::getGlobalMessages();
 
-		// Generate view
-		return View::make('larachat::home.index', $this->view_opts);
-	}
+	// 	// Generate view
+	// 	return View::make('larachat::home.index', $this->view_opts);
+	// }
 
 	/**
 	 * Message action, receives data to send a message to a user
@@ -127,6 +127,11 @@ class Larachat_Chat_Controller extends Base_Controller {
 	}
 
 	// lqai/chat/test
+	/**
+	 * General Update action, returns all the data a client should need
+	 * to get new messages/users/etc
+	 * @return JSON Data in json format
+	 */
 	public function action_generalUpdate()
 	{
 		$myUser = Auth::user();
@@ -148,13 +153,17 @@ class Larachat_Chat_Controller extends Base_Controller {
 		// get unread messages
 		$generalUpdate['privateUnread'] = $laraUser->getPrivateUnread();
 
-		// get open messages
+		// get open messages, left open
 		$generalUpdate['openChats'] = $laraUser->getStoredChatsFromCache();
 		
 		return Response::json($generalUpdate);
 	}
 
-	public function action_test()
+	/**
+	 * Chat action, retrieves larauser and generates view
+	 * @return [type] [description]
+	 */
+	public function action_chat()
 	{
 		// Get logged in user
 		$user = Auth::user();
@@ -180,13 +189,15 @@ class Larachat_Chat_Controller extends Base_Controller {
 		$this->view_opts['user'] = $user;
 		$this->view_opts['online_users'] = Larachat\Models\User::getOnlineUsers();
 		$this->view_opts['global_messages'] = Larachat\Models\Message::getGlobalMessages();
-
-		//DEBUG
-		// return var_dump($laraUser);
+	
 		// Generate view
 		return View::make('larachat::home.index2', $this->view_opts);
 	}
 
+	/**
+	 * Marks all unread private messages from a specific ID up until the
+	 * specified id sent in the Request as 'id'
+	 */
 	public function action_markAsReadFromUntilID()
 	{
 		$myUser = Auth::user();
@@ -198,6 +209,9 @@ class Larachat_Chat_Controller extends Base_Controller {
 		$laraUser->markAsReadFromUntilID($id, $messageid);
 	}
 
+	/**
+	 * Action to store a userID as a left open chat to reopen next time
+	 */
 	public function action_storeChat()
 	{
 		$myUser = Auth::user();
@@ -208,6 +222,9 @@ class Larachat_Chat_Controller extends Base_Controller {
 		return Response::json($laraUser->getStoredChatsFromCache());
 	}
 
+	/**
+	 * Action to remove a userID as a left open chat from cache
+	 */
 	public function action_removeChat()
 	{
 		$myUser = Auth::user();

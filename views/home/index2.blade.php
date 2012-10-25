@@ -54,6 +54,8 @@ var chats;
 var openChats = new Array(1);
 openChats[0] = -1;
 var lastGeneral;
+// flag to prevent update until sent message has been received by server
+var sendingMessage = false;
 
 /**
  * Clears the input
@@ -64,6 +66,9 @@ function clearText()
 	textarea.val('');
 }
 
+/**
+ * Scrolls the chat window to the bottom, newest message
+ */
 function scrollBottom () {
 	tabs = $('#tabs');
 	tabs.scrollTop(tabs[0].scrollHeight);
@@ -84,21 +89,21 @@ function getActiveChatId()
  * @param  {int} id The id for the name wanted
  * @return {string}    The name associated with the id
  */
-function getUser(id)
-{
-	var name;
-	var data = {};
-	data['id'] = id;
-	// Sends ajax request to retrieve the name
-	$.ajax({
-		url: '/chat/name',
-		data: data,
-		async: false,
-		success: function(data, textStatus, xhr) { name = data }
-	});
+// function getUser(id)
+// {
+// 	var name;
+// 	var data = {};
+// 	data['id'] = id;
+// 	// Sends ajax request to retrieve the name
+// 	$.ajax({
+// 		url: '/chat/name',
+// 		data: data,
+// 		async: false,
+// 		success: function(data, textStatus, xhr) { name = data }
+// 	});
 
-	return name;
-}
+// 	return name;
+// }
 
 /**
  * Checks if a chat for an id is currently open (tabbed)
@@ -129,6 +134,10 @@ function markAsRead (id) {
 		});
 }
 
+/**
+ * Stores a user ID as open in cache, to re-open next time
+ * @param  {int} id The user ID to store in cache
+ */
 function storeChat (id) {
 	var data = {};
 	var url = '/chat/storeChatToCache';
@@ -142,6 +151,10 @@ function storeChat (id) {
 		});
 }
 
+/**
+ * Removes a user ID as left open from cache
+ * @param  {int} id The user ID to remove
+ */
 function removeChat (id) {
 	var data = {};
 	var url = '/chat/removeChatFromCache';
@@ -155,6 +168,11 @@ function removeChat (id) {
 		});
 }
 
+/**
+ * Marks messages from a specific user as read, up until the specified ID
+ * @param  {int} id        The user of the messages to mark as read
+ * @param  {int} messageid The last message ID to mark as read
+ */
 function markAsReadFromUntilID (id, messageid) {
 	var data = {};
 	var url = '/chat/readFromUntilID';
@@ -199,32 +217,32 @@ function clearNotification(id)
 /**
  * Gets any notifications (new messages from other users)
  */
-function getNotifications()
-{
-	var data = {};
-	var url = '/chat/notification';
-	// sends ASYNC post request
-	// on success notifies for each user id received	
-	$.post(
-		url,
-		data,
-		function(data, textStatus, xhr) {						
-			$.each(data, function(key, value) {			
-				//console.log(value);
-				notify(value);
-			});
-		});	
-}
+// function getNotifications()
+// {
+// 	var data = {};
+// 	var url = '/chat/notification';
+// 	// sends ASYNC post request
+// 	// on success notifies for each user id received	
+// 	$.post(
+// 		url,
+// 		data,
+// 		function(data, textStatus, xhr) {						
+// 			$.each(data, function(key, value) {			
+// 				//console.log(value);
+// 				notify(value);
+// 			});
+// 		});	
+// }
 
 /**
  * Creates a new tab from a user id
  * @param  {int} id The user id
  */
-function createNewT(id)
-{
-	// get username first, then call creator function
-	createNewTab(id, getUser(id));
-}
+// function createNewT(id)
+// {
+// 	// get username first, then call creator function
+// 	createNewTab(id, getUser(id));
+// }
 
 /**
  * Creates a new chat tab
@@ -279,25 +297,25 @@ function createNewUserRow(name, id)
 /**
  * Sends request and updates users as necessary
  */
-function updateUsers()
-{
-	var data = {};
-	var url = '/chat/users';
-	// Sends ASYNC request and updates on success
-	// also registers click handlers
-	$.post(
-		url,
-		data,
-		function(data, textStatus, xhr) {
-			// console.log(data);
-			// clear previous
-			users.empty();
-			$.each(data, function(key, value) {			
-				insertNewUser(value.attributes);
-			});
-			registerTabOpeners();
-		});
-}
+// function updateUsers()
+// {
+// 	var data = {};
+// 	var url = '/chat/users';
+// 	// Sends ASYNC request and updates on success
+// 	// also registers click handlers
+// 	$.post(
+// 		url,
+// 		data,
+// 		function(data, textStatus, xhr) {
+// 			// console.log(data);
+// 			// clear previous
+// 			users.empty();
+// 			$.each(data, function(key, value) {			
+// 				insertNewUser(value.attributes);
+// 			});
+// 			registerTabOpeners();
+// 		});
+// }
 
 /**
  * Insertas a new message from a user in its respective tab
@@ -332,32 +350,32 @@ function createNewMessageRow(nick, message, id)
  * Sends request and inserts messages to respective tab
  * @param  {int} from The user from which to get new messages
  */
-function updateMessages(from)
-{
-	var data = {};
-	var url = '/chat/update';
-	// get last message displayed in chat tab
-	data['from'] = from;
-	data['id'] = $('#' + from + ' tr').last().data('messageid');
+// function updateMessages(from)
+// {
+// 	var data = {};
+// 	var url = '/chat/update';
+// 	// get last message displayed in chat tab
+// 	data['from'] = from;
+// 	data['id'] = $('#' + from + ' tr').last().data('messageid');
 
-	// TODO: change if you want complete history
-	if (!data['id'])
-		data['id'] = -1; // default get all
+// 	// TODO: change if you want complete history
+// 	if (!data['id'])
+// 		data['id'] = -1; // default get all
 
-	// DEBUG
-	// console.log(data['id']);
-	// console.log('Updating messages from: ' + data['from'] + ', mid = ' + data['id']);
+// 	// DEBUG
+// 	// console.log(data['id']);
+// 	// console.log('Updating messages from: ' + data['from'] + ', mid = ' + data['id']);
 	
-	$.post(
-		url,
-		data,
-		function(data, textStatus, xhr) {
-			// console.log(data);
-			$.each(data, function(key, value) {			
-				insertNewMessageFrom(value, from);
-			});
-		});
-}
+// 	$.post(
+// 		url,
+// 		data,
+// 		function(data, textStatus, xhr) {
+// 			// console.log(data);
+// 			$.each(data, function(key, value) {			
+// 				insertNewMessageFrom(value, from);
+// 			});
+// 		});
+// }
 
 /**
  * Sends a message to a user via POST
@@ -391,10 +409,14 @@ function sendMessage(to, message)
 	var tr = insertNewMessageFrom(tempMessage, to);
 	clearText();
 
+	sendingMessage = true;
+
 	$.post(
 		url,
 		data,
 		function(data, textStatus, xhr) {			
+			// finished sending message
+			sendingMessage = false;
 			// Updates messageid on success
 			tr.data('messageid', data);
 			// console.log(tr);
@@ -437,6 +459,9 @@ function registerTabOpeners()
 	});
 }
 
+/**
+ * Registers the close icon and removes the chat from active
+ */
 function registerTabClosers()
 {
 	$("i.icon-remove").click(function (e) {
@@ -447,6 +472,10 @@ function registerTabClosers()
 	});
 }
 
+/**
+ * Closes the actual tab, removing it from the tabs
+ * @param  {int} id The ID of the user to close the tab
+ */
 function closeTab(id)
 {
 	// remove link form tabs
@@ -519,7 +548,12 @@ $(document).ready(function($)
 	// repeat every 3.5 secs, lower times may cause repeated message insertions
 	setInterval(function() {
 		var input = {};
-		input['generalID'] = lastGeneral;		
+		input['generalID'] = lastGeneral;
+
+		if (sendingMessage)
+		{
+			return;
+		}		
 
 		$.post(
 			'/chat/generalUpdate',
@@ -562,7 +596,7 @@ $(document).ready(function($)
 				registerTabClosers();
 			});
 			clearNotification(getActiveChatId());	
-	}, 2000);
+	}, 2500);
 });
 </script>
 @endsection

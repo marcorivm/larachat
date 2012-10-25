@@ -15,9 +15,15 @@ class User {
 		$this->user_name = $user_name;
 	}
 
+	/**
+	 * Gets stored chats that tue user left open in his last session
+	 * @return Array Array containing the user id and the username of each chat
+	 */
 	public function getStoredChatsFromCache()
 	{
 		$myUser = $this->user;
+		// there's a cache entry for each user, stored_chats_5, for a user with
+		// ID = 5
 		$cacheName = 'stored_chats_' . $myUser->id;
 		$chats = \Cache::get($cacheName);
 
@@ -25,6 +31,7 @@ class User {
 
 		if ($chats)
 		{
+			// iterate through cache and store them in an array
 			foreach($chats as $chat)
 			{
 				$ret[] = array($chat, static::findName($chat));
@@ -34,9 +41,15 @@ class User {
 		return $ret;
 	}
 
+	/**
+	 * Stores a user as a left open chat in the cache
+	 * @param  int $userID The userID to store
+	 */
 	public function storeChatToCache($userID)
 	{
 		$myUser = $this->user;
+		// there's a cache entry for each user, stored_chats_5, for a user with
+		// ID = 5
 		$cacheName = 'stored_chats_' . $myUser->id;
 		$chats = \Cache::get($cacheName);
 
@@ -48,14 +61,17 @@ class User {
 			foreach ($chats as $chat)
 			{
 				if ($chat == $userID)
-				{					
+				{			
+				// if that ID was already stored, save cache and return		
 					\Cache::forever($cacheName, $chats);
 					return;
 				}
 			}
+			// if not then add it
 			$chats[] = $userID;
 		} else
 		{
+			// cache is empty, start a new one
 			$chats = array($userID);
 		}
 
@@ -63,6 +79,10 @@ class User {
 		return;
 	}
 
+	/**
+	 * Removes a stored ID as left open from the cache
+	 * @param  int $userID The user ID to remove
+	 */
 	public function removeChatFromCache($userID)
 	{
 		$myUser = $this->user;
@@ -470,6 +490,11 @@ class User {
 		}
 	}
 
+	/**
+	 * Finds the name of a user ID in the Laravel User model
+	 * @param  int $id The id to look up
+	 * @return String     The name for that ID
+	 */
 	public static function findName($id)
 	{
 		$user = \User::find($id);
