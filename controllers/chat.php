@@ -145,6 +145,9 @@ class Larachat_Chat_Controller extends Base_Controller {
 		// return active users
 		$generalUpdate['online_users'] = Larachat\Models\User::getOnline();
 
+		// get offline users
+		$generalUpdate['offline_users'] = Larachat\Models\User::getOffline();
+
 		// get messages from general chat
 		$generalUpdate['generalUnread'] = Larachat\Models\Message::where('to', '=', '-1')
 												 ->where('id', '>', $lastGeneralID)
@@ -187,7 +190,8 @@ class Larachat_Chat_Controller extends Base_Controller {
 
 		// Attach objects to view
 		$this->view_opts['user'] = $user;
-		$this->view_opts['online_users'] = Larachat\Models\User::getOnlineUsers();
+		$this->view_opts['online_users'] = Larachat\Models\User::getOnline();
+		$this->view_opts['offline_users'] = Larachat\Models\User::getOffline();
 		$this->view_opts['global_messages'] = Larachat\Models\Message::getGlobalMessages();
 	
 		// Generate view
@@ -233,6 +237,16 @@ class Larachat_Chat_Controller extends Base_Controller {
 		$laraUser->removeChatFromCache(Input::get('userID'));
 
 		return Response::json($laraUser->getStoredChatsFromCache());
+	}
+
+	public function action_lastTen()
+	{
+		$myUser = Auth::user();
+		$laraUser = new Larachat\Models\User($myUser, $myUser->name);
+
+		$from = Input::get('from');
+
+		return Response::json($laraUser->getLastTenFrom($from));
 	}
 }
 

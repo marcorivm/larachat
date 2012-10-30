@@ -362,8 +362,65 @@ class User {
 				}
 			}
 		}
-
 		return $users;
+	}
+
+	/**
+	 * Returns whether user is online or not
+	 * @return boolean True if user is currently logged into the chat app
+	 */
+	public function isOnline()
+	{
+		// Get online users from cache
+		if (\Cache::has('online_users'))
+		{
+			$online = \Cache::get('online_users');
+			// for each user stored in cache where
+			// cache[0] = userID
+			// cache[1] = user's nickname
+			foreach($online as $online_user)
+			{
+				$user = \User::find($online_user[0]);
+				if ($this->user == $user)
+				{
+					// User IS online, return true
+					return true;
+				}
+			}
+		} else
+		{
+			// if there's no cache, immediately return false
+			return false;
+		}
+		// user is not online, return false
+		return false;
+	}
+
+	/**
+	 * Returns offline Users, currently returns Eloquent user, should return
+	 * larachat user in near future
+	 * @return User[] Array with offline users
+	 */
+	public static function getOffline()
+	{
+		// Get all users in DB
+		$users = \User::all();
+		// Array to return with results
+		$offline_users = array();
+
+		foreach($users as $user)
+		{
+			// Obtain larachat user from Eloquent user
+			$tempLaraUser = new static($user, $user->name);
+			// If not online, add to result array
+			if (!$tempLaraUser->isOnline())
+			{
+				// add name as nick
+				$user->nick = $user->name;
+				$offline_users[] = $user;
+			}
+		}
+		return $offline_users;
 	}
 
 	public function getName()
@@ -467,6 +524,42 @@ class User {
 										 ->where('to', '=', $myId)
 										 ->where('id', '<=', $messageid)
 										 ->update(array('status' => true));
+	}
+
+	public function getPrivateFromUpTo($from, $messageid)
+	{
+		$myUser = $this->user;
+		$myId = $myUser->id;
+
+		$messages = \DB::table('messages')->where('id', '<', $messageid)
+										  ->where('to', '=', $from)
+										  ->where('from', '=', $myId)
+										  ->get();
+
+		$messages2 = \DB::table('messages')->where('id', '<', $messageid)
+										  ->where('to', '=', $myId)
+										  ->where('from', '=', $from)
+										  ->get();	
+
+		return $messages + $messages2;
+	}
+
+	public function getLastTenFrom($from)
+	{
+		$myUser = $this->user;
+		$myId = $myUser->id;
+
+		$messages = Message::where(function($query) use ($from, $myId) {
+			$query->where('to', '=', $from);
+			$query->where('from', '=', $myId);
+		})->or_where(function ($query) use ($from, $myId) {
+			$query->where('to', '=', $myId);
+			$query->where('from', '=', $from);
+		})->order_by('id', 'desc')
+		  ->take(10)
+		  ->get();
+
+		  return $messages;
 	}
 
 	public function incoming()

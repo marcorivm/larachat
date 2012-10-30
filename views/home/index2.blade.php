@@ -36,10 +36,13 @@
 @section('right-bar')
 	<table id="users" class="table table-striped table-bordered table-hover">
 		@forelse ($online_users as $u)
-			<tr data-userid="{{ $u->id }}" style="cursor: pointer"><td>{{ $u->name }}</td></tr>
+			<tr class="success" data-userid="{{ $u->id }}" style="cursor: pointer"><td>{{ $u->name }}</td></tr>
 		@empty
 			No hay usuarios conectados!
 		@endforelse
+		@foreach($offline_users as $u)	
+			<tr class="error" data-userid="{{ $u->id }}" style="cursor: pointer"><td>{{ $u->name }}</td></tr>
+		@endforeach
 	</table>
 @endsection
 
@@ -281,6 +284,7 @@ function insertNewUser(user)
 {
 	var newUser = createNewUserRow(user.nick, user.id);
 	$('#users').append(newUser);
+	return newUser;
 }
 
 /**
@@ -292,6 +296,28 @@ function insertNewUser(user)
 function createNewUserRow(name, id)
 {
 	return $('<tr data-userid="' + id + '" style="cursor: pointer"><td>' + name + '</td></tr>');
+}
+
+/**
+ * Inserts a new user with online class styling
+ * @param  {user} user User object to insert
+ */
+function insertOnlineUser(user)
+{
+	var newOnlineUser = insertNewUser(user);
+	newOnlineUser.addClass('success');
+	return newOnlineUser;
+}
+
+/**
+ * Inserts a new user with offline class styling
+ * @param  {user} user User object to insert
+ */
+function insertOfflineUser(user)
+{
+	var newOfflineUser = insertNewUser(user);
+	newOfflineUser.addClass('error');
+	return newOfflineUser;
 }
 
 /**
@@ -321,7 +347,7 @@ function createNewUserRow(name, id)
  * Insertas a new message from a user in its respective tab
  * @param  {message} message The message to insert
  * @param  {int} userid  The user id
- * @return {$}         jQuery object representing the meessage row
+ * @return {$}         jQuery object representing the message row
  */
 function insertNewMessageFrom(message, userid)
 {
@@ -453,6 +479,21 @@ function registerTabOpeners()
 		if (!isOpen(tr.data('userid')))
 		{
 			createNewTab(tr.data('userid'), tr.children().html());			
+			// get history
+			var url = '/chat/lastTen';
+			var data = {};
+			data['from'] = tr.data('userid');
+			$.post(
+				url,
+				data,
+				function(data, textStatus, xhr) {
+					$.each(data, function(key, value) {
+						// insert new message on top					
+						var message = value.attributes;
+						var otherID = (myId == message.from) ? message.to : message.from;
+						insertNewMessageFrom(message, otherID);						
+					});
+				});
 		}
 		// open tab
 		$('#chats a[href="#tab' + tr.data('userid') + '"]').tab('show');
@@ -560,14 +601,21 @@ $(document).ready(function($)
 			input,
 			function(data, textStatus, xhr) {
 			
-				// update users	
+				// update online users	
 				users.empty()
 				$.each(data.online_users, function(key, value) {
 					var temp = value.attributes;
-					insertNewUser(temp);
+					insertOnlineUser(temp);
+				});				
+
+				// update offline users
+				$.each(data.offline_users, function(key, value) {
+					var temp = value.attributes;
+					insertOfflineUser(temp);
 				});
-				registerTabOpeners();
 				
+				registerTabOpeners();			
+
 				// insert new general messages
 				$.each(data.generalUnread, function(key, value) {
 					var temp = value.attributes;
