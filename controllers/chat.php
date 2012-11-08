@@ -152,13 +152,13 @@ class Larachat_Chat_Controller extends Base_Controller {
 		$generalUpdate['generalUnread'] = Larachat\Models\Message::where('to', '=', '-1')
 												 ->where('id', '>', $lastGeneralID)
 												 ->get();
-		
+
 		// get unread messages
 		$generalUpdate['privateUnread'] = $laraUser->getPrivateUnread();
 
 		// get open messages, left open
 		$generalUpdate['openChats'] = $laraUser->getStoredChatsFromCache();
-		
+
 		return Response::json($generalUpdate);
 	}
 
@@ -181,7 +181,7 @@ class Larachat_Chat_Controller extends Base_Controller {
 		// // Store nick in cache
 		// Larachat\Models\User::addNick($user->id, $user->name);
 		// Larachat\Models\User::updateTimestamp($user->id);
-		// 
+		//
 		$laraUser = new Larachat\Models\User($user, $user->name);
 		$laraUser->addNickToCache();
 		$laraUser->updateTimestamps();
@@ -193,9 +193,9 @@ class Larachat_Chat_Controller extends Base_Controller {
 		$this->view_opts['online_users'] = Larachat\Models\User::getOnline();
 		$this->view_opts['offline_users'] = Larachat\Models\User::getOffline();
 		$this->view_opts['global_messages'] = Larachat\Models\Message::getGlobalMessages();
-	
+
 		// Generate view
-		return View::make('larachat::home.index2', $this->view_opts);
+		return View::make('larachat::home.index', $this->view_opts);
 	}
 
 	/**

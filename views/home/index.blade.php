@@ -4,17 +4,17 @@
 <div class="row-fluid">
 	<div class="span12 well">
 		<ul class="nav nav-tabs" id="chats">
-			<li class="active"><a href="#tab-1" id="link-1">General <span id="not-1"></span></a></li>			
+			<li class="active"><a href="#tab-1" id="link-1"><span id="not-1"></span> General</span></a></li>
 		</ul>
-		<div class="tab-content" id="tabs">
+		<div class="tab-content" id="tabs" style="overflow: auto; height: 400px;">
 			<div class="tab-pane active" id="tab-1">
 				<table id="-1" class="table table-striped table-bordered">
 					@forelse ($global_messages as $message)
 						<tr data-messageid="{{ $message->id }}"><td>{{ $message->nick }}: {{ $message->message }}</td></tr>
-					@empty						
+					@empty
 					@endforelse
-				</table>		
-			</div>			
+				</table>
+			</div>
 		</div>
 	</div>
 </div>
@@ -36,10 +36,13 @@
 @section('right-bar')
 	<table id="users" class="table table-striped table-bordered table-hover">
 		@forelse ($online_users as $u)
-			<tr data-userid="{{ $u->id }}"><td>{{ $u->name }}</td></tr>
+			<tr class="success" data-userid="{{ $u->id }}" style="cursor: pointer"><td>{{ $u->name }}</td></tr>
 		@empty
 			No hay usuarios conectados!
 		@endforelse
+		@foreach($offline_users as $u)
+			<tr class="error" data-userid="{{ $u->id }}" style="cursor: pointer"><td>{{ $u->name }}</td></tr>
+		@endforeach
 	</table>
 @endsection
 
@@ -54,6 +57,8 @@ var chats;
 var openChats = new Array(1);
 openChats[0] = -1;
 var lastGeneral;
+// flag to prevent update until sent message has been received by server
+var sendingMessage = false;
 
 /**
  * Clears the input
@@ -62,6 +67,14 @@ function clearText()
 {
 	// clears the value of the input
 	textarea.val('');
+}
+
+/**
+ * Scrolls the chat window to the bottom, newest message
+ */
+function scrollBottom () {
+	tabs = $('#tabs');
+	tabs.scrollTop(tabs[0].scrollHeight);
 }
 
 /**
@@ -79,21 +92,21 @@ function getActiveChatId()
  * @param  {int} id The id for the name wanted
  * @return {string}    The name associated with the id
  */
-function getUser(id)
-{
-	var name;
-	var data = {};
-	data['id'] = id;
-	// Sends ajax request to retrieve the name
-	$.ajax({
-		url: '/chat/name',
-		data: data,
-		async: false,
-		success: function(data, textStatus, xhr) { name = data }
-	});
+// function getUser(id)
+// {
+// 	var name;
+// 	var data = {};
+// 	data['id'] = id;
+// 	// Sends ajax request to retrieve the name
+// 	$.ajax({
+// 		url: '/chat/name',
+// 		data: data,
+// 		async: false,
+// 		success: function(data, textStatus, xhr) { name = data }
+// 	});
 
-	return name;
-}
+// 	return name;
+// }
 
 /**
  * Checks if a chat for an id is currently open (tabbed)
@@ -119,18 +132,73 @@ function markAsRead (id) {
 	$.post(
 		url,
 		data,
-		function(data, textStatus, xhr) { clearNotification(id); }
-		);
+		function(data, textStatus, xhr) {
+			// clearNotification(id);
+		});
+}
+
+/**
+ * Stores a user ID as open in cache, to re-open next time
+ * @param  {int} id The user ID to store in cache
+ */
+function storeChat (id) {
+	var data = {};
+	var url = '/chat/storeChatToCache';
+	data['userID'] = id;
+
+	$.post(
+		url,
+		data,
+		function(data, textStatus, xhr) {
+
+		});
+}
+
+/**
+ * Removes a user ID as left open from cache
+ * @param  {int} id The user ID to remove
+ */
+function removeChat (id) {
+	var data = {};
+	var url = '/chat/removeChatFromCache';
+	data['userID'] = id;
+
+	$.post(
+		url,
+		data,
+		function(data, textStatus, xhr) {
+
+		});
+}
+
+/**
+ * Marks messages from a specific user as read, up until the specified ID
+ * @param  {int} id        The user of the messages to mark as read
+ * @param  {int} messageid The last message ID to mark as read
+ */
+function markAsReadFromUntilID (id, messageid) {
+	var data = {};
+	var url = '/chat/readFromUntilID';
+	data['id'] = id;
+	data['messageid'] = messageid;
+	// sends async post request
+	// on success clears the notification mark from the tab
+	$.post(
+		url,
+		data,
+		function(data, textStatus, xhr) {
+			// clearNotification(id);
+		});
 }
 
 /**
  * Notifies that a new message has arrived from a certain user
  * @param  {int} id The id of the user that sent the message
  */
-function notify(id)
+function notify(id, name)
 {
 	// create new tab
-	createNewT(id);
+	createNewTab(id, name);
 	// place an icon in the span located in the tab
 	// <span id="notID"></span>
 	var span = $('#not' + id);
@@ -152,32 +220,32 @@ function clearNotification(id)
 /**
  * Gets any notifications (new messages from other users)
  */
-function getNotifications()
-{
-	var data = {};
-	var url = '/chat/notification';
-	// sends ASYNC post request
-	// on success notifies for each user id received	
-	$.post(
-		url,
-		data,
-		function(data, textStatus, xhr) {						
-			$.each(data, function(key, value) {			
-				//console.log(value);
-				notify(value);
-			});
-		});	
-}
+// function getNotifications()
+// {
+// 	var data = {};
+// 	var url = '/chat/notification';
+// 	// sends ASYNC post request
+// 	// on success notifies for each user id received
+// 	$.post(
+// 		url,
+// 		data,
+// 		function(data, textStatus, xhr) {
+// 			$.each(data, function(key, value) {
+// 				//console.log(value);
+// 				notify(value);
+// 			});
+// 		});
+// }
 
 /**
  * Creates a new tab from a user id
  * @param  {int} id The user id
  */
-function createNewT(id)
-{
-	// get username first, then call creator function
-	createNewTab(id, getUser(id));
-}
+// function createNewT(id)
+// {
+// 	// get username first, then call creator function
+// 	createNewTab(id, getUser(id));
+// }
 
 /**
  * Creates a new chat tab
@@ -193,9 +261,9 @@ function createNewTab(id, name)
 	}
 
 	// create HTML elements needed
-	var link = $('<li><a href="#tab' + id + '" id="link' + id + '">' + name + ' <span id="not' + id + '"></span></a></li>');
+	var link = $('<li><a href="#tab' + id + '" id="link' + id + '"><span id="not' + id + '"></span> '+ name + ' <span id="close' + id + '"><i class="icon-remove"></i></span></a></li>');
 	var div = $('<div class="tab-pane" id="tab' + id + '">');
-	var table = $('<table id="' + id + '" class="table table-striped table-bordered"></table>');	
+	var table = $('<table id="' + id + '" class="table table-striped table-bordered"></table>');
 	// append them where apprpopiate
 	chats.append(link);
 	div.append(table);
@@ -204,6 +272,8 @@ function createNewTab(id, name)
 	openChats.push(id);
 	// registar click handlers
 	registerTabs();
+	// add chat to cache for left open
+	storeChat(id);
 }
 
 /**
@@ -214,6 +284,7 @@ function insertNewUser(user)
 {
 	var newUser = createNewUserRow(user.nick, user.id);
 	$('#users').append(newUser);
+	return newUser;
 }
 
 /**
@@ -224,37 +295,59 @@ function insertNewUser(user)
  */
 function createNewUserRow(name, id)
 {
-	return $('<tr data-userid="' + id + '"><td>' + name + '</td></tr>');
+	return $('<tr data-userid="' + id + '" style="cursor: pointer"><td>' + name + '</td></tr>');
+}
+
+/**
+ * Inserts a new user with online class styling
+ * @param  {user} user User object to insert
+ */
+function insertOnlineUser(user)
+{
+	var newOnlineUser = insertNewUser(user);
+	newOnlineUser.addClass('success');
+	return newOnlineUser;
+}
+
+/**
+ * Inserts a new user with offline class styling
+ * @param  {user} user User object to insert
+ */
+function insertOfflineUser(user)
+{
+	var newOfflineUser = insertNewUser(user);
+	newOfflineUser.addClass('error');
+	return newOfflineUser;
 }
 
 /**
  * Sends request and updates users as necessary
  */
-function updateUsers()
-{
-	var data = {};
-	var url = '/chat/users';
-	// Sends ASYNC request and updates on success
-	// also registers click handlers
-	$.post(
-		url,
-		data,
-		function(data, textStatus, xhr) {
-			// console.log(data);
-			// clear previous
-			users.empty();
-			$.each(data, function(key, value) {			
-				insertNewUser(value.attributes);
-			});
-			registerTabOpeners();
-		});
-}
+// function updateUsers()
+// {
+// 	var data = {};
+// 	var url = '/chat/users';
+// 	// Sends ASYNC request and updates on success
+// 	// also registers click handlers
+// 	$.post(
+// 		url,
+// 		data,
+// 		function(data, textStatus, xhr) {
+// 			// console.log(data);
+// 			// clear previous
+// 			users.empty();
+// 			$.each(data, function(key, value) {
+// 				insertNewUser(value.attributes);
+// 			});
+// 			registerTabOpeners();
+// 		});
+// }
 
 /**
  * Insertas a new message from a user in its respective tab
  * @param  {message} message The message to insert
  * @param  {int} userid  The user id
- * @return {$}         jQuery object representing the meessage row
+ * @return {$}         jQuery object representing the message row
  */
 function insertNewMessageFrom(message, userid)
 {
@@ -283,32 +376,32 @@ function createNewMessageRow(nick, message, id)
  * Sends request and inserts messages to respective tab
  * @param  {int} from The user from which to get new messages
  */
-function updateMessages(from)
-{
-	var data = {};
-	var url = '/chat/update';
-	// get last message displayed in chat tab
-	data['from'] = from;
-	data['id'] = $('#' + from + ' tr').last().data('messageid');
+// function updateMessages(from)
+// {
+// 	var data = {};
+// 	var url = '/chat/update';
+// 	// get last message displayed in chat tab
+// 	data['from'] = from;
+// 	data['id'] = $('#' + from + ' tr').last().data('messageid');
 
-	// TODO: change if you want complete history
-	if (!data['id'])
-		data['id'] = -1; // default get all
+// 	// TODO: change if you want complete history
+// 	if (!data['id'])
+// 		data['id'] = -1; // default get all
 
-	// DEBUG
-	// console.log(data['id']);
-	// console.log('Updating messages from: ' + data['from'] + ', mid = ' + data['id']);
-	
-	$.post(
-		url,
-		data,
-		function(data, textStatus, xhr) {
-			// console.log(data);
-			$.each(data, function(key, value) {			
-				insertNewMessageFrom(value, from);
-			});
-		});
-}
+// 	// DEBUG
+// 	// console.log(data['id']);
+// 	// console.log('Updating messages from: ' + data['from'] + ', mid = ' + data['id']);
+
+// 	$.post(
+// 		url,
+// 		data,
+// 		function(data, textStatus, xhr) {
+// 			// console.log(data);
+// 			$.each(data, function(key, value) {
+// 				insertNewMessageFrom(value, from);
+// 			});
+// 		});
+// }
 
 /**
  * Sends a message to a user via POST
@@ -317,10 +410,21 @@ function updateMessages(from)
  */
 function sendMessage(to, message)
 {
+	// don't send an empty message
+	if (message.length == 0)
+	{
+		return;
+	}
+
 	var url = '/chat/message';
 	var data = {};
 	data['message'] = message;
 	data['to'] = to;
+	// if message was sent to general, update lastGeneral
+	if (to == -1)
+	{
+		lastGeneral++;
+	}
 	// Instantly insert message, without waiting for request to complete
 	// real messageid will be updated on success
 	var tempMessage = {}
@@ -331,14 +435,19 @@ function sendMessage(to, message)
 	var tr = insertNewMessageFrom(tempMessage, to);
 	clearText();
 
+	sendingMessage = true;
+
 	$.post(
 		url,
 		data,
-		function(data, textStatus, xhr) {			
+		function(data, textStatus, xhr) {
+			// finished sending message
+			sendingMessage = false;
 			// Updates messageid on success
 			tr.data('messageid', data);
 			// console.log(tr);
 		});
+	scrollBottom();
 }
 
 /**
@@ -352,6 +461,7 @@ function registerTabs()
 	  id = $(this).attr('id').substring(4);
 	  // when user clicks on tab, mark messages as read
 	  markAsRead(id);
+	  clearNotification(id);
 	})
 }
 
@@ -362,17 +472,65 @@ function registerTabOpeners()
 {
 	$('#users tr').click(function (e) {
 		e.preventDefault();
-		
+
 		var tr = $(this);
 		// check if tab isn't already open
 		// REDUNDANT check
 		if (!isOpen(tr.data('userid')))
 		{
-			createNewTab(tr.data('userid'), tr.children().html());			
+			createNewTab(tr.data('userid'), tr.children().html());
+			// get history
+			var url = '/chat/lastTen';
+			var data = {};
+			data['from'] = tr.data('userid');
+			$.post(
+				url,
+				data,
+				function(data, textStatus, xhr) {
+					$.each(data, function(key, value) {
+						// insert new message on top
+						var message = value.attributes;
+						var otherID = (myId == message.from) ? message.to : message.from;
+						insertNewMessageFrom(message, otherID);
+					});
+				});
 		}
 		// open tab
 		$('#chats a[href="#tab' + tr.data('userid') + '"]').tab('show');
 	});
+}
+
+/**
+ * Registers the close icon and removes the chat from active
+ */
+function registerTabClosers()
+{
+	$("i.icon-remove").click(function (e) {
+		e.preventDefault();
+		id = $(this).parent().attr('id').substr(5);
+		removeChat(id);
+		closeTab(id);
+	});
+}
+
+/**
+ * Closes the actual tab, removing it from the tabs
+ * @param  {int} id The ID of the user to close the tab
+ */
+function closeTab(id)
+{
+	// remove link form tabs
+	$("#link" + id).remove();
+	// switch active to general
+	$('#chats a[href="#tab-1"]').tab('show');
+	// remove from active chats
+	for (i = 0; i < openChats.length; i++)
+	{
+		if (openChats[i] == id)
+		{
+			openChats[i] = -1;
+		}
+	}
 }
 
 /**
@@ -430,14 +588,63 @@ $(document).ready(function($)
 
 	// repeat every 3.5 secs, lower times may cause repeated message insertions
 	setInterval(function() {
-		updateUsers();
-		for (i = 0; i < openChats.length; i++)
-		{			
-			updateMessages(openChats[i]);
+		var input = {};
+		input['generalID'] = lastGeneral;
+
+		if (sendingMessage)
+		{
+			return;
 		}
-		// markAsRead(getActiveChatId());
-		getNotifications();
-	}, 3500);
+
+		$.post(
+			'/chat/generalUpdate',
+			input,
+			function(data, textStatus, xhr) {
+
+				// update online users
+				users.empty()
+				$.each(data.online_users, function(key, value) {
+					var temp = value.attributes;
+					insertOnlineUser(temp);
+				});
+
+				// update offline users
+				$.each(data.offline_users, function(key, value) {
+					var temp = value.attributes;
+					insertOfflineUser(temp);
+				});
+
+				registerTabOpeners();
+
+				// insert new general messages
+				$.each(data.generalUnread, function(key, value) {
+					var temp = value.attributes;
+					lastGeneral = temp.id;
+					insertNewMessageFrom(temp, -1);
+					notify(-1, 'General');
+					scrollBottom();
+				});
+
+				// insert new private messages
+				$.each(data.privateUnread, function(key, value) {
+					var temp = value.attributes;
+					var otherID = (myId == temp.from) ? temp.to : temp.from;
+					var otherName = temp.nick;
+					notify(otherID * 1, otherName)
+					insertNewMessageFrom(temp, otherID);
+					//markAsRead(getActiveChatId());
+					markAsReadFromUntilID(otherID, temp.id);
+
+				});
+
+				// open previously left open chats
+				$.each(data.openChats, function(key, value) {
+					createNewTab(value[0] * 1, value[1]);
+				});
+				registerTabClosers();
+			});
+			clearNotification(getActiveChatId());
+	}, 2500);
 });
 </script>
 @endsection
